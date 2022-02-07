@@ -1,0 +1,10 @@
+version: '3.9'
+services:
+  svg:
+    restart: always
+    image: ubuntu:20.04
+    container_name: 'svg'
+    working_dir: '/root/'
+    tty: true
+    volumes:
+    - ../:/workdir
