@@ -2,7 +2,7 @@ version: '3.9'
 services:
   svg:
     restart: always
-    image: ubuntu:20.04
+    image: ichiharanaruki/svgcode:latest
     container_name: 'svg'
     working_dir: '/root/'
     tty: true
