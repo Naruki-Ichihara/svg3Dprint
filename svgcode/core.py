@@ -1,15 +1,16 @@
 from svgelements import *
 import re
 import os
+import json
 import numpy as np
 from python_tsp.distances import great_circle_distance_matrix
 from python_tsp.heuristics import solve_tsp_local_search
 from halo import Halo
 
-def codeblock(subpath, extruder_coff=0.06):
+def codeblock(subpath, extruder_coff=0.06, feed_rate=400, high_feed=6000):
     x, y = extractCoords(subpath)
     e = calculateDisplacement(x, y, extruder_coff)
-    code = subpath2gcode(x, y, e)
+    code = subpath2gcode(x, y, e, feed_rate, high_feed)
     return code
 
 def readSVG(source):
@@ -66,7 +67,7 @@ def calculateDisplacement(x, y, coff):
         disp.append(l)
     return disp
 
-def subpath2gcode(x, y, e, feed_rate=2550, high_feed=6000):
+def subpath2gcode(x, y, e, feed_rate, high_feed):
     codelist = []
     initial_feed = 'G00'+' F{}\n'.format(high_feed)
     initial = 'G00'+' X'+str(x[0])+' Y'+str(y[0])+' E'+str(e[0])+'\n'
@@ -94,7 +95,7 @@ def sortIsland(subpaths):
     permutation, distance = solve_tsp_local_search(
     distance_matrix,
     x0=None,
-    perturbation_scheme="ps6",
+    perturbation_scheme="two_opt",
     max_processing_time=None,
     log_file=None,
     )
@@ -106,6 +107,16 @@ def setZlevel(z, feed_rate=6000):
     codes = []
     codes.append('G00'+' Z{}'.format(z)+' F{}\n'.format(feed_rate))
     return codes
+
+def preset(source):
+    f = open(source, 'r')
+    elements = json.load(f)
+    head = elements['header']
+    foot = elements['footer']
+    return head, foot
+
+def calculateEcoff(w, lamda=1.00, h=0.2, D=1.75):
+    return lamda*4*h*w/np.pi/D**2
 
     
 

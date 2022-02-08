@@ -1,23 +1,24 @@
 from svgelements import *
-import svgcode as s
 from svgcode.core import *
 
-file = open('test.gcode', 'w')
+file = open('gcodes/mantis.gcode', 'w')
+source = './svg/mantis.svg'
+feedrate = 2550
+fastfeedrate = 6000
+pathwidth = 0.5
+coff = calculateEcoff(pathwidth)
 
-source = './svg/sample.svg'
+h, f = preset('./presets/composer_anisoprint.json')
 
-elements = s.readSVG(source)
+elements = readSVG(source)
 path = elements[0]
 subpaths = parseSubPaths(path)
 perm = sortIsland(subpaths)
+
+file.write(h)
 for i in range(len(subpaths)):
     i = perm[i]
-    code = codeblock(subpaths[i])
+    code = codeblock(subpaths[i], coff, feedrate, fastfeedrate)
     file.writelines(code)
+file.write(f)
 file.close()
-
-"""
-dwg = s.Drawing('test.svg', size=(297, 200))
-dwg.add(s.path.Path(d=sub.d(), stroke=s.utils.rgb(0, 0, 205)))
-dwg.save()
-"""
