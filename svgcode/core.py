@@ -7,7 +7,7 @@ from python_tsp.distances import great_circle_distance_matrix
 from python_tsp.heuristics import solve_tsp_local_search
 from halo import Halo
 
-def codeblock(subpath, extruder_coff=0.06, feed_rate=400, high_feed=6000):
+def codeblock(subpath, extruder_coff=0.06, feed_rate=2550, high_feed=6000):
     x, y = extractCoords(subpath)
     e = calculateDisplacement(x, y, extruder_coff)
     code = subpath2gcode(x, y, e, feed_rate, high_feed)
@@ -69,8 +69,10 @@ def calculateDisplacement(x, y, coff):
 
 def subpath2gcode(x, y, e, feed_rate, high_feed):
     codelist = []
+    def_origin = 'G92 E0\n'
     initial_feed = 'G00'+' F{}\n'.format(high_feed)
     initial = 'G00'+' X'+str(x[0])+' Y'+str(y[0])+' E'+str(e[0])+'\n'
+    codelist.append(def_origin)
     codelist.append(initial_feed)
     codelist.append(initial)
     set_feedrate = 'G00'+' F{}\n'.format(feed_rate)
@@ -103,10 +105,8 @@ def sortIsland(subpaths):
     spinner.stop()
     return permutation
 
-def setZlevel(z, feed_rate=6000):
-    codes = []
-    codes.append('G00'+' Z{}'.format(z)+' F{}\n'.format(feed_rate))
-    return codes
+def setZlevel(z):
+    return 'G00'+' Z{}\n'.format(z)
 
 def preset(source):
     f = open(source, 'r')
@@ -118,9 +118,12 @@ def preset(source):
 def calculateEcoff(w, lamda=1.00, h=0.2, D=1.75):
     return lamda*4*h*w/np.pi/D**2
 
-    
-
-
-
-
-
+def parge(start, stop, coff, feed_rate=1200):
+    codes = []
+    dx = stop[0] - start[0]
+    dy = stop[1] - start[1]
+    distance = np.sqrt(dx**2+dy**2)
+    e = distance*coff
+    codes.append('G00'+' X{}'.format(start[0])+' Y{}'.format(start[0])+' F{}\n'.format(feed_rate))
+    codes.append('G01'+' X{}'.format(stop[0])+' Y{}'.format(stop[0])+' E{}\n'.format(e))
+    return codes

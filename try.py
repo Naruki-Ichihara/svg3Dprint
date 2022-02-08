@@ -14,11 +14,15 @@ elements = readSVG(source)
 path = elements[0]
 subpaths = parseSubPaths(path)
 perm = sortIsland(subpaths)
+start = parge([10, 10], [60, 10], coff*10)
 
 file.write(h)
+file.writelines(start)
+file.write(setZlevel(0.0))
 for i in range(len(subpaths)):
-    i = perm[i]
-    code = codeblock(subpaths[i], coff, feedrate, fastfeedrate)
+    j = perm[i]
+    code = codeblock(subpaths[j], coff, feedrate, fastfeedrate)
     file.writelines(code)
+    file.write(setZlevel(0.2*i))
 file.write(f)
 file.close()
