@@ -7,14 +7,14 @@ from python_tsp.distances import great_circle_distance_matrix
 from python_tsp.heuristics import solve_tsp_local_search
 from halo import Halo
 
-def codeblock(subpath, extruder_coff=0.06, feed_rate=2550, high_feed=6000):
+def codeblock(subpath, extruder_coff, feed_rate=2550, high_feed=6000, retraction=0.01):
     x, y = extractCoords(subpath)
     e = calculateDisplacement(x, y, extruder_coff)
-    code = subpath2gcode(x, y, e, feed_rate, high_feed)
+    code = subpath2gcode(x, y, e, extruder_coff, feed_rate, high_feed, retraction)
     return code
 
-def readSVG(source):
-    svg = SVG.parse(source)
+def readSVG(source, ppi=25.4):
+    svg = SVG.parse(source, ppi)
     elements = []
     for element in svg.elements():
         try:
@@ -67,19 +67,27 @@ def calculateDisplacement(x, y, coff):
         disp.append(l)
     return disp
 
-def subpath2gcode(x, y, e, feed_rate, high_feed):
+def subpath2gcode(x, y, e, coff, feed_rate, high_feed, retraction=0.01):
     codelist = []
     def_origin = 'G92 E0\n'
-    initial_feed = 'G00'+' F{}\n'.format(high_feed)
-    initial = 'G00'+' X'+str(x[0])+' Y'+str(y[0])+' E'+str(e[0])+'\n'
+    initial_feed = 'G00'+' E{}'.format(retraction)+' F{}\n'.format(high_feed)
+    initial = 'G00'+' X'+str(x[0])+' Y'+str(y[0])+' E'+str(e[0]+retraction)+'\n'
     codelist.append(def_origin)
     codelist.append(initial_feed)
     codelist.append(initial)
     set_feedrate = 'G00'+' F{}\n'.format(feed_rate)
     codelist.append(set_feedrate)
     for i in range(len(x)-1):
-        element = 'G01'+' X'+str(x[i+1])+' Y'+str(y[i+1])+' E'+str(e[i+1])+'\n'
+        element = 'G01'+' X'+str(x[i+1])+' Y'+str(y[i+1])+' E'+str(e[i+1]+retraction)+'\n'
         codelist.append(element)
+    dx = x[-1] - x[0]
+    dy = x[-1] - x[0]
+    r = np.sqrt(dx**2+dy**2)
+    e_close = r*coff
+    close = 'G00'+' X'+str(x[0])+' Y'+str(y[0])+' E'+str(e_close)+'\n'
+    codelist.append(close)
+    retract = 'G00'+' E{}'.format(e_close - retraction)+'\n'
+    codelist.append(retract)
     return codelist
 
 def startCoords(subpaths):
@@ -89,7 +97,7 @@ def startCoords(subpaths):
         coords.append([x[0], y[0]])
     return coords
 
-def sortIsland(subpaths):
+def sortPaths(subpaths):
     spinner = Halo(text='Sorting subpaths by solving TSP.', spinner='dots')
     spinner.start()
     coords = np.array(startCoords(subpaths))
