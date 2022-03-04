@@ -7,14 +7,14 @@ from python_tsp.distances import great_circle_distance_matrix
 from python_tsp.heuristics import solve_tsp_local_search
 from halo import Halo
 
-def codeblock(subpath, extruder_coff, feed_rate=2550, high_feed=6000, retraction=0.01):
+def codeblock(subpath, extruder_coff, feed_rate=2550, high_feed=6000, retraction=1.0):
     x, y = extractCoords(subpath)
     e = calculateDisplacement(x, y, extruder_coff)
     code = subpath2gcode(x, y, e, extruder_coff, feed_rate, high_feed, retraction)
     return code
 
 def readSVG(source, ppi=25.4):
-    svg = SVG.parse(source, ppi)
+    svg = SVG.parse(source, ppi=25.4)
     elements = []
     for element in svg.elements():
         try:
@@ -67,7 +67,7 @@ def calculateDisplacement(x, y, coff):
         disp.append(l)
     return disp
 
-def subpath2gcode(x, y, e, coff, feed_rate, high_feed, retraction=0.01):
+def subpath2gcode(x, y, e, coff, feed_rate, high_feed, retraction=1.0):
     codelist = []
     def_origin = 'G92 E0\n'
     initial_feed = 'G00'+' E{}'.format(retraction)+' F{}\n'.format(high_feed)
@@ -81,9 +81,9 @@ def subpath2gcode(x, y, e, coff, feed_rate, high_feed, retraction=0.01):
         element = 'G01'+' X'+str(x[i+1])+' Y'+str(y[i+1])+' E'+str(e[i+1]+retraction)+'\n'
         codelist.append(element)
     dx = x[-1] - x[0]
-    dy = x[-1] - x[0]
+    dy = y[-1] - y[0]
     r = np.sqrt(dx**2+dy**2)
-    e_close = r*coff
+    e_close = e[-1]+r*coff+retraction
     close = 'G00'+' X'+str(x[0])+' Y'+str(y[0])+' E'+str(e_close)+'\n'
     codelist.append(close)
     retract = 'G00'+' E{}'.format(e_close - retraction)+'\n'
@@ -132,6 +132,6 @@ def parge(start, stop, coff, feed_rate=1200):
     dy = stop[1] - start[1]
     distance = np.sqrt(dx**2+dy**2)
     e = distance*coff
-    codes.append('G00'+' X{}'.format(start[0])+' Y{}'.format(start[0])+' F{}\n'.format(feed_rate))
-    codes.append('G01'+' X{}'.format(stop[0])+' Y{}'.format(stop[0])+' E{}\n'.format(e))
+    codes.append('G00'+' X{}'.format(start[0])+' Y{}'.format(start[1])+' F{}\n'.format(feed_rate))
+    codes.append('G01'+' X{}'.format(stop[0])+' Y{}'.format(stop[1])+' E{}\n'.format(e))
     return codes
