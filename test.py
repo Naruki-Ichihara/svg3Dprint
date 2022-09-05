@@ -1,8 +1,8 @@
 from svgelements import *
 from svgcode.core import *
 
-file = open('gcodes/mbb_4_lambda09.gcode', 'w')
-source = '/workdir/svg/path_mbb.svg'
+file = open('gcodes/test/test.gcode', 'w')
+source = '/workdir/svg/test/test.svg'
 feedrate = 1200
 fastfeedrate = 8000
 pathwidth = 0.8
@@ -14,7 +14,6 @@ h, f = preset('./presets/composer_anisoprint.json')
 elements = readSVG(source)
 path_1 = parseSubPaths(elements[0])
 path_2 = parseSubPaths(elements[1])
-shield = parseSubPaths(elements[2])
 
 print(len(elements))
 permutation_1 = sortPaths(path_1)
@@ -27,20 +26,15 @@ zs = np.arange(0.25, 0.25+5, 0.25)
 index = 0
 for z in zs:
     file.write(setZlevel(z))
-    for i in range(len(shield)):
-        code = codeblock(shield[i], coff, feedrate, fastfeedrate, 5.0)
+    for i in range(len(path_1)):
+        j = permutation_1[i]
+        code = codeblock(path_1[j], coff, feedrate, fastfeedrate, retraction)
         file.writelines(code)
-    if index % 2 == 0:
-        for i in range(len(path_1)):
-            j = permutation_1[i]
-            code = codeblock(path_1[j], coff, feedrate, fastfeedrate, retraction)
-            file.writelines(code)
-    else:
-        for i in range(len(path_2)):
-            j = permutation_2[i]
-            code = codeblock(path_2[j], coff, feedrate, fastfeedrate, retraction)
-            file.writelines(code)
-            pass
+    for i in range(len(path_2)):
+        j = permutation_2[i]
+        code = codeblock(path_2[j], coff, feedrate, fastfeedrate, retraction)
+        file.writelines(code)
+        pass
     index += 1
 file.write(f)
 file.close()

@@ -123,8 +123,8 @@ def preset(source):
     foot = elements['footer']
     return head, foot
 
-def calculateEcoff(w, lamda=1.00, h=0.2, D=1.75):
-    return lamda*4*h*w/np.pi/D**2
+def calculateEcoff(w, lamda=1.00, h=0.2, D=1.70):
+    return lamda * (4/np.pi*(w*h)/D**2 - (4/np.pi-1)*h**2/D**2)
 
 def parge(start, stop, coff, feed_rate=1200):
     codes = []
